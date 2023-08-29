@@ -1,54 +1,92 @@
 import calendar
 from datetime import datetime
 
+
 class BudgetService:
     @staticmethod
-    def query(start, end):
+    def query(start: datetime, end: datetime) -> float:
+        """
+
+        :param start: datetime, ex. datetime(2023, 7, 15)
+        :param end: datetime, ex. datetime(2023, 7, 16)
+        :return: float, ex. 100.0
+        """
+        # early return if the time range is invalid
         if start > end:
             return 0
-
-        budget_list = BudgetRepo.get_all()
-
-        start_month_days = BudgetService._get_days_in_month(start.year, start.month)
-
+        budgets = BudgetRepo.get_all()
         result = 0
-        for budget in budget_list:
-            budget_year = int(budget.year_month[:4])
-            budget_month = int(budget.year_month[4:])
-            budget_start = datetime(budget_year, budget_month, 1)
-            last_day = calendar.monthrange(budget_year, budget_month)[1]
-            budget_end = datetime(budget_year, budget_month, last_day)
-            if budget_start <= start <= budget_end and budget_start <= end <= budget_end:
-                duration = end - start
-                result += (duration.days + 1) * BudgetService.get_per_day_budget(budget_year, budget_month, budget.amount)
-            elif start <= budget_start and end >= budget_end:
+        for budget in budgets:
+            if budget.contains(start) and budget.contains(end):
+                result += BudgetService.get_duration(start, end) * budget.daily_amount
+            elif budget.after(start) and budget.by(end):
                 result += budget.amount
-            elif budget_start <= start <= budget_end:
-                duration = start_month_days - start.day
-                result += (duration + 1) * BudgetService.get_per_day_budget(budget_year, budget_month, budget.amount)
-            elif budget_start <= end <= budget_end:
-                result += end.day * BudgetService.get_per_day_budget(budget_year, budget_month, budget.amount)
+            elif budget.contains(start):
+                result += budget.amount - (start.day - 1) * budget.daily_amount
+            elif budget.contains(end):
+                result += end.day * budget.daily_amount
         return result
 
     @staticmethod
-    def _get_days_in_month(year, month) -> int:
+    def get_days_in_month(year, month) -> int:
+        """
+
+        :param year: int, ex. 2023
+        :param month: int, ex. 7
+        :return: int, ex. 31
+        """
         return calendar.monthrange(year, month)[1]
 
     @staticmethod
-    def _get_duration_month(start, end):
-        return []  # YYYYmm, YYYYmm
-
-    @staticmethod
-    def get_per_day_budget(year, month, amount) -> int:
-        return amount / BudgetService._get_days_in_month(year, month)
-
-class BudgetRepo:
-    @staticmethod
-    def get_all():
-        pass
+    def get_duration(start: datetime, end: datetime) -> int:
+        return (end - start).days + 1
 
 
 class Budget:
-    def __init__(self, year_month, amount) -> None:
-        self.year_month = year_month
+    def __init__(self, year_month: str, amount: int) -> None:
+        """
+
+        :param year_month: str, ex. 20230715
+        :param amount: int, ex. 10000
+        """
+        year = int(year_month[:4])
+        month = int(year_month[4:])
+        self.start = datetime(year, month, 1)
+        days = BudgetService.get_days_in_month(year, month)
+        self.end = datetime(year, month, days)
         self.amount = amount
+        self.daily_amount = amount / days
+
+    def contains(self, date: datetime) -> bool:
+        """
+
+        :param date: datetime, ex. datetime(2023, 7, 15)
+        :return: bool, ex. True
+        """
+        return self.start <= date <= self.end
+
+    def by(self, date: datetime) -> bool:
+        """
+
+        :param date: datetime, ex. datetime(2023, 7, 15)
+        :return: bool, ex. True
+        """
+        return self.end <= date
+
+    def after(self, date: datetime) -> bool:
+        """
+
+        :param date: datetime, ex. datetime(2023, 7, 15)
+        :return: bool, ex. True
+        """
+        return self.start >= date
+
+
+class BudgetRepo:
+    @staticmethod
+    def get_all() -> list[Budget]:
+        """
+
+        :return: list[Budget], ex. [Budget('202307', 3100), Budget('202308', 6200)]
+        """
+        return []
