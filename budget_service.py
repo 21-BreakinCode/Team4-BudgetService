@@ -10,7 +10,6 @@ class BudgetService:
         budget_list = BudgetRepo.get_all()
 
         start_month_days = BudgetService._get_days_in_month(start.year, start.month)
-        end_month_days = BudgetService._get_days_in_month(end.year, end.month)
 
         result = 0
         for budget in budget_list:
@@ -41,8 +40,6 @@ class BudgetService:
 
     @staticmethod
     def get_per_day_budget(year, month, amount) -> int:
-        # if amount == 0 or amount is None:
-        #     return 0
         return amount / BudgetService._get_days_in_month(year, month)
 
 class BudgetRepo:
