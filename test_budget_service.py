@@ -1,38 +1,32 @@
 from datetime import datetime
 from unittest import TestCase
-from mock import patch, MagicMock
+from mock import patch
 
 from budget_service import BudgetService, BudgetRepo, Budget
 
 
-# class TestBudget(TestCase):
-#     def test_miodel__valid(self):
-#         budget = Budget('202101', 31)
-
-#         assert budget.year_month == '202101'
-#         assert budget.amount == 31
-
-#     def test_model__invalid(self):
-#         with self.assertRaises(ValueError) as context:
-#             budget = Budget(13, 'invalid')
-
-#         self.assertEqual('Invalid input', str(context.exception))
-
-
-# class TestBudgetRepo(TestCase):
-#     def test_get_all(self):
-#         self.assertEqual([], BudgetRepo().get_all())
-
-
-class MockBudgetRepo(BudgetRepo):
-    def __init__(self) -> None:
-        super().__init__()
-        self.budgets = []
-
-    def get_all(self):
-        return self.budgets
-
 class TestBudgetService(TestCase):
+    def setUp(self) -> None:
+        '''Init budget table'''
+        self.mock_multi_month_budget_list = [
+            Budget('202306', 30),
+            Budget('202307', 310),
+            Budget('202308', 3100),
+            Budget('202309', 3000),
+            Budget('202310', 31),
+        ]
+
+        self.mock_empty_data_budget_list = [
+            Budget('202306', 30),
+            Budget('202308', 3100),
+        ]
+
+        self.mock_zero_budget_in_budget_list = [
+            Budget('202306', 30),
+            Budget('202307', 0),
+            Budget('202308', 3100),
+        ]
+
     @patch('budget_service.BudgetRepo.get_all', return_value = [Budget('202307', 3100)])
     def test_query_one_day_budget(self, mock_get_all):
         expected_budget = 100
