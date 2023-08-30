@@ -7,31 +7,17 @@ class BudgetService:
         self.budget_repo = budget_repo
 
     def _get_year_month_daily_budget_map(self):
-        """
-        Return:
-            {
-                '197001': 100,
-                '197002': 150
-            }
-        """
         budgets = self.budget_repo.get_all()
 
         year_month_daily_budget_map = defaultdict(lambda: 0)
 
         for budget in budgets:
-            number_of_day = calendar.monthrange(int(budget.year_month[:4]), int(budget.year_month[4:]))[1]
-            year_month_daily_budget_map[budget.year_month] = budget.amount / number_of_day
+            daily_amount = budget.get_daily_amount()
+            year_month_daily_budget_map[budget.year_month] = daily_amount
 
         return year_month_daily_budget_map
 
     def _get_year_month_query_days_map(self, start, end):
-        """
-        Return:
-            {
-                '197001': 2,
-                '197002': 1
-            }
-        """
         year_month_query_days_map = {}
 
         y_months = range(start.year * 12 + start.month, end.year * 12 + end.month)
@@ -55,7 +41,7 @@ class BudgetService:
             year_month_query_days_map[f'{end.year}{end.month:02d}'] = end.day
 
         return year_month_query_days_map
-        
+
 
     def query(self, start: date,  end: date) -> float:
         year_month_daily_budget_map = self._get_year_month_daily_budget_map()
@@ -66,16 +52,21 @@ class BudgetService:
             amount += year_month_daily_budget_map[year_month] * days
 
         return amount
-    
+
 class Budget:
     def __init__(self, year_month, amount):
         self.year_month = year_month
         self.amount = amount
+
+    def get_daily_amount(self):
+        number_of_day = calendar.monthrange(int(self.year_month[:4]), int(self.year_month[4:]))[1]
+        daily_amount = self.amount / number_of_day
+        return daily_amount
 
 class BudgetRepo:
     def get_all(self):
 
         pass
 
-    
+
 
